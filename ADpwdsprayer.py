@@ -112,6 +112,8 @@ def main():
     print(f"[+] Loaded {len(users)} users and {len(passwords)} passwords.")
     print(f"[+] Interval: {args.interval} minute(s)")
     print(f"[+] Logging to {args.outfile}")
+      if args.bait_user:
+    	  print("\033[1;33m[!] Make sure to add the bait user to the top of users list as well.\033[0m")
 
     for pwd in passwords:
 
