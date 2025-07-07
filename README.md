@@ -1,4 +1,5 @@
 # ADpwdsprayer.py
+
 AD password sprayer relying on crackmapexec with advanced functionality and safety nets.
 
 
@@ -34,7 +35,8 @@ git clone https://github.com/jasetpen/ADpwdsprayer.py.git
 
 
 # Usage
-python3 ADpwdsprayer.py --dc-ip <DC_IP> -u <users.txt> -p <passwords.txt> -i <interval> -f <logfile> [-bu] <bait user>
+
+`python3 ADpwdsprayer.py --dc-ip <DC_IP> -u <users.txt> -p <passwords.txt> -i <interval> -f <logfile> [-bu] <bait user>`
 
 | Argument           | Required | Description                                                                                     |
 |--------------------|----------|-------------------------------------------------------------------------------------------------|
