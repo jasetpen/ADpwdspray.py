@@ -6,17 +6,6 @@ import sys
 import time
 from pathlib import Path
 
-"""
-Password Spraying with CrackMapExec
-
-Every -i minutes:
-  • optionally spray a bait user once with a fixed wrong password before main spray
-  • take the next password from the password list
-  • run: crackmapexec smb <DC IP> -u <users file> -p <one password from password file>
-  • append all output to the logfile
-  • detect valid creds, lockouts, disabled/expired accounts
-"""
-
 GREEN = "\033[92m"
 RED = "\033[91m"
 PURPLE = "\033[95m"
