@@ -17,6 +17,7 @@ AD password sprayer relying on crackmapexec with advanced functionality and safe
 - Logs:
   - All CME output to a file
   - Valid credentials to `valid_credentials.txt`
+
  
 ## Screenshots
 
@@ -31,12 +32,12 @@ Example of exceeding password policy limits, that is where bait user comes in ha
 - [CrackMapExec](https://github.com/byt3bl33d3r/CrackMapExec) installed and in your `$PATH`
 
 
-# Installation
+## Installation
 
 git clone https://github.com/jasetpen/ADpwdspray.py.git
 
 
-# Usage
+## Usage
 
 `python3 ADpwdspray.py --dc-ip <DC_IP> -u <users.txt> -p <passwords.txt> -i <interval> -a <attempts per interval> -f <logfile> [-bu] <bait user>`
 
