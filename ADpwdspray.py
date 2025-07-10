@@ -112,6 +112,8 @@ def main():
     print(f"[+] Interval: {args.interval} minute(s)")
     print(f"[+] Attempts per interval: {args.attempts}")
     print(f"[+] Logging to {args.logfile}")
+    print("\033[1;33m[!] Never include Administrator/Domain Admin accounts.\033[0m")
+    print("\033[1;33m[!] Always use maximum half the allowed attempts per interval.\033[0m")
     if args.bait_user:
         print("\033[1;33m[!] Make sure to add the bait user to the top of users list as well.\033[0m")
 
