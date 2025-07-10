@@ -136,13 +136,15 @@ def main():
             for cred in valid_creds:
                 print(f"{GREEN}[+] Valid credentials: {cred}{RESET}")
                 with open('valid_credentials.txt', 'a') as vf:
-                    vf.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {cred}\n")
-
+                    vf.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} VALID: {cred}\n")
+            
             flagged = check_disabled_or_expired(out, users)
             if flagged:
                 print(f"{PURPLE}[!] Disabled or expired accounts detected:{RESET}")
-                for user, reason in flagged.items():
-                    print(f"{PURPLE}    - {user} ({reason}){RESET}")
+                with open('valid_credentials.txt', 'a') as vf:
+                    for user, reason in flagged.items():
+                        print(f"{PURPLE}    - {user} ({reason}){RESET}")
+                        vf.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {reason}: {user}\n")
 
             locked = check_lockouts(out, users)
             if locked:
@@ -162,3 +164,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
