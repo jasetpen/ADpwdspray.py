@@ -13,6 +13,7 @@ AD password sprayer relying on crackmapexec with advanced functionality and safe
   - Connection issues (red)
 - Safety nets:
   - In case of any account getting locked out the script terminates
+  - In case of DC timeout it retries the script 5 times with 3 minute wait intervals before quitting
   - Optional **bait user spraying** with wrong password to detect lockout thresholds before affecting real users
 - Logs:
   - All CME output to a file
@@ -39,7 +40,7 @@ git clone https://github.com/jasetpen/ADpwdspray.py.git
 
 ## Usage
 
-`python3 ADpwdspray.py --dc-ip <DC_IP> -u <users.txt> -p <passwords.txt> -i <interval> -a <attempts per interval> -f <logfile> [-bu] <bait user>`
+`ADpwdspray.py [-h] --dc-ip DC_IP -u USERS -p PASSWORDS -i INTERVAL [-a ATTEMPTS] [-bu BAIT_USER] -l LOGFILE`
 
 | Argument           | Required | Description                                                                                     |
 |--------------------|----------|-------------------------------------------------------------------------------------------------|
@@ -47,8 +48,8 @@ git clone https://github.com/jasetpen/ADpwdspray.py.git
 | `-u`, `--users`    | Yes      | Path to file with one username per line                                                         |
 | `-p`, `--passwords`| Yes      | Path to file with one password per line                                                         |
 | `-i`, `--interval` | Yes      | Interval in minutes between each password spray                                                |
-| `-a`, `--attempts` | Yes      | Attempts per interval                                                |
-| `-f`, `--outfile`  | Yes      | File to append all CrackMapExec output                                                          |
+| `-a`, `--attempts` | No      | Attempts per interval, default 1                                                |
 | `-bu`, `--bait-user` | No     | User to use as lockout bait – sprayed once per interval with a wrong password to detect lockout |
+| `-l`, `--log file`  | Yes      | File to append all CrackMapExec output                                                          |
 
 --bait-user also has to be in the users list (at the top) for it to get sprayed twice
