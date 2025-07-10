@@ -5,11 +5,12 @@ AD password sprayer relying on crackmapexec with advanced functionality and safe
 
 ## Features
 
-- Sprays **one password per interval** across all usernames
+- Sprays **a one password per defined number of attempts per interval** across all usernames
 - Detects and logs:
   - Valid credentials (green)
   - Locked-out accounts (red)
   - Disabled or expired accounts (purple)
+  - Connection issues (red)
 - Safety nets:
   - In case of any account getting locked out the script terminates
   - Optional **bait user spraying** with wrong password to detect lockout thresholds before affecting real users
@@ -19,8 +20,8 @@ AD password sprayer relying on crackmapexec with advanced functionality and safe
  
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/910ae135-84b0-493a-ac77-ec00d56552ab)
-![image](https://github.com/user-attachments/assets/7eb59417-4723-45a1-a86b-d8d17f45dd9e)
+<img width="864" height="246" alt="image" src="https://github.com/user-attachments/assets/88314213-efb0-40e4-b5bd-5f7e3b7eee26" />
+Example of a exceeding password policy limits, that is where bait user comes in handy.
 
 
 ## Requirements
@@ -36,7 +37,7 @@ git clone https://github.com/jasetpen/ADpwdspray.py.git
 
 # Usage
 
-`python3 ADpwdspray.py --dc-ip <DC_IP> -u <users.txt> -p <passwords.txt> -i <interval> -f <logfile> [-bu] <bait user>`
+`python3 ADpwdspray.py --dc-ip <DC_IP> -u <users.txt> -p <passwords.txt> -i <interval> -a <attempts per interval> -f <logfile> [-bu] <bait user>`
 
 | Argument           | Required | Description                                                                                     |
 |--------------------|----------|-------------------------------------------------------------------------------------------------|
@@ -44,6 +45,7 @@ git clone https://github.com/jasetpen/ADpwdspray.py.git
 | `-u`, `--users`    | Yes      | Path to file with one username per line                                                         |
 | `-p`, `--passwords`| Yes      | Path to file with one password per line                                                         |
 | `-i`, `--interval` | Yes      | Interval in minutes between each password spray                                                |
+| `-a`, `--attempts` | Yes      | Attempts per interval                                                |
 | `-f`, `--outfile`  | Yes      | File to append all CrackMapExec output                                                          |
 | `-bu`, `--bait-user` | No     | User to use as lockout bait – sprayed once per interval with a wrong password to detect lockout |
 
