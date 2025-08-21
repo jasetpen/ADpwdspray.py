@@ -1,6 +1,6 @@
 # ADpwdspray.py
 
-AD password sprayer relying on crackmapexec with advanced functionality and safety nets.
+AD password sprayer relying on netexec with advanced functionality and safety nets.
 
 
 ## Features
@@ -30,7 +30,7 @@ Example of exceeding password policy limits, that is where bait user comes in ha
 ## Requirements
 
 - Python 3
-- [CrackMapExec](https://github.com/byt3bl33d3r/CrackMapExec) installed and in your `$PATH`
+- [NetExec](https://github.com/Pennyw0rth/NetExec) installed and in your `$PATH`
 
 
 ## Installation
@@ -51,5 +51,6 @@ git clone https://github.com/jasetpen/ADpwdspray.py.git
 | `-a`, `--attempts` | No      | Attempts per interval, default 1                                                |
 | `-bu`, `--bait-user` | No     | User to use as lockout bait – sprayed once per interval with a wrong password to detect lockout |
 | `-l`, `--log file`  | Yes      | File to append all CrackMapExec output                                                          |
+| `--evade`          | No      | Use --jitter 2-5, wait 2-5 seconds between each spray attempt                                     |
 
---bait-user also has to be in the users list (at the top) for it to get sprayed twice
+NOTE: --bait-user also has to be in the users list (at the top) for it to get sprayed twice
