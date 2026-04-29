@@ -24,7 +24,7 @@ AD password sprayer relying on netexec with advanced functionality and safety ne
 
 <img width="864" height="246" alt="image" src="https://github.com/user-attachments/assets/88314213-efb0-40e4-b5bd-5f7e3b7eee26" />
 
-Example of exceeding password policy limits, that is where bait user comes in handy.
+Example of exceeding password policy limits, this is where bait user comes in handy.
 
 
 ## Requirements
